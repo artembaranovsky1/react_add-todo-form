@@ -4,24 +4,24 @@ import usersFromServer from './api/users';
 import todosFromServer from './api/todos';
 import { TodoList } from './components/TodoList';
 import { useState } from 'react';
+import { Todo } from './types/Todo';
+import { User } from './types/User';
 
-type User = {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-};
+function searchUserById(id: number): User | undefined {
+  return usersFromServer.find(user => user.id === id);
+}
+
+const initialTodos: Todo[] = todosFromServer.map(todo => ({
+  ...todo,
+  user: searchUserById(todo.userId) as User,
+}));
 
 export const App = () => {
   const [selectedUser, setSelectedUser] = useState(0);
   const [text, setText] = useState('');
   const [hasErrorText, setHasErrorText] = useState(false);
   const [hasErrorUser, setHasErrorUser] = useState(false);
-  const [newTodos, setNewTodos] = useState(todosFromServer);
-
-  function searchUserById(id: number): User | undefined {
-    return usersFromServer.find(us => us.id === id);
-  }
+  const [newTodos, setNewTodos] = useState<Todo[]>(initialTodos);
 
   const isFormValid = () => {
     let valid = true;
@@ -46,14 +46,19 @@ export const App = () => {
       return;
     }
 
-    const findUser = searchUserById(selectedUser);
+    const user = searchUserById(selectedUser);
+
+    if (!user) {
+      return;
+    }
+
     const newId = Math.max(...newTodos.map(todo => todo.id), 0) + 1;
 
-    const newTodo = {
+    const newTodo: Todo = {
       id: newId,
       title: text,
       userId: selectedUser,
-      user: findUser,
+      user,
       completed: false,
     };
 
@@ -94,7 +99,7 @@ export const App = () => {
           <select
             data-cy="userSelect"
             value={selectedUser}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
               const selectedId = Number(event.target.value);
 
               setSelectedUser(selectedId);
@@ -105,9 +110,9 @@ export const App = () => {
               Choose a user
             </option>
 
-            {usersFromServer.map(us => (
-              <option key={us.id} value={us.id}>
-                {us.name}
+            {usersFromServer.map(user => (
+              <option key={user.id} value={user.id}>
+                {user.name}
               </option>
             ))}
           </select>
@@ -122,7 +127,7 @@ export const App = () => {
         </button>
       </form>
 
-      <TodoList todos={newTodos}/>
+      <TodoList todos={newTodos} />
     </div>
   );
 };
