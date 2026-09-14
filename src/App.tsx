@@ -16,6 +16,7 @@ const initialTodos: Todo[] = todosFromServer.map(todo => ({
   user: searchUserById(todo.userId) as User,
 }));
 
+
 export const App = () => {
   const [selectedUser, setSelectedUser] = useState(0);
   const [text, setText] = useState('');
